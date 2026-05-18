@@ -1,0 +1,81 @@
+{
+  "version": "1.1.0",
+  "purpose": "研究タイトル入力時の過剰サジェストを避けつつ、抽象語・感覚語・総称語には具体化候補を提示するための属性付き辞書。",
+  "normalization": {
+    "trim": true,
+    "remove_spaces": true,
+    "normalize_common_symbols": [
+      "CO₂->CO2",
+      "ＣＯ２->CO2",
+      "ｐＨ->pH"
+    ],
+    "case_sensitive": true,
+    "japanese_width_normalization_recommended": true
+  },
+  "matching_policy": {
+    "primary_match": "exact_normalized",
+    "partial_match_for_suppression": false,
+    "partial_match_for_warning": true,
+    "longer_phrase_exact_match_wins": true,
+    "important_rule": "specific辞書は部分一致で使わない。集中力の中の『力』、力の大きさの中の『大きさ』で判定しない。",
+    "examples": [
+      {
+        "input": "力",
+        "judgement": "specific/measurable",
+        "action": "suppress_suggestion",
+        "reason": "specific辞書に完全一致する。"
+      },
+      {
+        "input": "集中力",
+        "judgement": "abstract_psychological",
+        "action": "show_suggestion",
+        "reason": "抽象語辞書に完全一致する。内部に『力』を含んでもspecific判定しない。"
+      },
+      {
+        "input": "力の大きさ",
+        "judgement": "specific/measurable",
+        "action": "suppress_suggestion",
+        "reason": "specific辞書に完全一致する。内部に『大きさ』を含んでも感覚語判定しない。"
+      },
+      {
+        "input": "大きさ",
+        "judgement": "sensory_or_vague",
+        "action": "show_suggestion",
+        "reason": "曖昧語として具体化候補を提示する。"
+      }
+    ]
+  },
+  "priority_order": [
+    {
+      "rank": 1,
+      "condition": "abstract_or_sensory_exact_match",
+      "action": "show_suggestion",
+      "suppression": false
+    },
+    {
+      "rank": 2,
+      "condition": "generic_exact_match",
+      "action": "show_suggestion",
+      "suppression": false
+    },
+    {
+      "rank": 3,
+      "condition": "specific_or_measurable_exact_match",
+      "action": "suppress_suggestion",
+      "suppression": true
+    },
+    {
+      "rank": 4,
+      "condition": "unknown_term",
+      "action": "show_weak_suggestion_or_confirmation",
+      "suppression": false
+    }
+  ],
+  "recommended_judgement_function_pseudocode": [
+    "const x = normalize(input);",
+    "if (abstractMap.has(x)) return {action:'show_suggestion', source:'abstract', suggestions: suggestionMap[x]};",
+    "if (genericMap.has(x)) return {action:'show_suggestion', source:'generic', suggestions: suggestionMap[x]};",
+    "if (specificMap.has(x)) return {action:'suppress_suggestion', source:'specific'};",
+    "return {action:'show_weak_suggestion_or_confirmation', source:'unknown'};"
+  ]
+}
